@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DRIP — Fashion App</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1e1e1e;
+  --border: rgba(255,255,255,0.08);
+  --text: #f5f5f5;
+  --muted: #888;
+  --accent: #ff3d5a;
+  --accent2: #ff9f0a;
+  --green: #34c759;
+  --blue: #0a84ff;
+  --white: #ffffff;
+  --nav-h: 68px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; }
+
+/* ── APP SHELL ── */
+#app { width:100%; height:100%; position:relative; overflow:hidden; max-width:430px; margin:0 auto; background:var(--bg); box-shadow:0 0 60px rgba(0,0,0,0.8); }
+
+/* ── SCREENS ── */
+.screen { position:absolute; inset:0; overflow:hidden; display:none; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ── BOTTOM NAV ── */
+#bottom-nav {
+  position:absolute; bottom:0; left:0; right:0;
+  height:var(--nav-h);
+  background:rgba(10,10,10,0.92);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:none;
+  align-items:center;
+  justify-content:space-around;
+  z-index:50;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#bottom-nav.visible { display:flex; }
+
+.nav-item {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; padding:8px 16px; border-radius:12px;
+  transition:all 0.2s; opacity:0.5; flex:1;
+}
+.nav-item.active { opacity:1; }
+.nav-item svg { width:24px; height:24px; }
+.nav-item span { font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
+.nav-item.active span { color:var(--accent); }
+.nav-item.active svg { stroke:var(--accent); }
+
+/* Center post button */
+.nav-post {
+  width:52px; height:52px; background:var(--accent);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0;
+  box-shadow:0 4px 20px rgba(255,61,90,0.4);
+  transition:transform 0.2s;
+}
+.nav-post:hover { transform:scale(1.05); }
+
+/* ── AUTH SCREEN ── */
+#screen-auth {
+  background: linear-gradient(160deg, #0a0a0a 0%, #1a0a0f 50%, #0a0a0a 100%);
+  justify-content:center; align-items:center; padding:32px;
+}
+.auth-glow {
+  position:absolute; width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,61,90,0.15) 0%, transparent 70%);
+  top:10%; left:50%; transform:translateX(-50%);
+  animation: pulse 4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.1)} }
+
+.auth-logo {
+  font-family:'Syne',sans-serif; font-size:52px; font-weight:800;
+  letter-spacing:-2px; text-align:center; margin-bottom:8px;
+  background:linear-gradient(135deg, #fff 0%, #ff3d5a 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.auth-sub { text-align:center; color:var(--muted); font-size:15px; margin-bottom:48px; }
+
+.auth-tabs {
+  display:flex; background:var(--surface); border-radius:14px; padding:4px;
+  margin-bottom:28px; width:100%;
+}
+.auth-tab {
+  flex:1; padding:10px; text-align:center; font-size:14px; font-weight:600;
+  border-radius:10px; cursor:pointer; transition:all 0.2s; color:var(--muted);
+}
+.auth-tab.active { background:var(--accent); color:white; }
+
+.auth-form { width:100%; max-width:360px; }
+.auth-form-panel { display:none; }
+.auth-form-panel.active { display:block; }
+
+.inp {
+  width:100%; padding:15px 18px;
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:14px; color:var(--text); font-family:'DM Sans',sans-serif;
+  font-size:15px; outline:none; transition:border-color 0.2s; margin-bottom:12px;
+}
+.inp:focus { border-color:var(--accent); }
+.inp::placeholder { color:var(--muted); }
+
+.btn-main {
+  width:100%; padding:16px; background:var(--accent); color:white;
+  border:none; border-radius:14px; font-family:'Syne',sans-serif;
+  font-size:16px; font-weight:700; cursor:pointer; transition:all 0.2s;
+  letter-spacing:0.5px;
+}
+.btn-main:hover { background:#ff5570; transform:translateY(-1px); box-shadow:0 8px 24px rgba(255,61,90,0.3); }
+
+/* ── FEED (TikTok) ── */
+#screen-feed {
+  background:#000;
+}
+.feed-header {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  padding:16px 20px 12px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.feed-logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+.feed-tabs { display:flex; gap:20px; }
+.feed-tab { font-size:15px; font-weight:600; cursor:pointer; opacity:0.6; transition:opacity 0.2s; }
+.feed-tab.active { opacity:1; border-bottom:2px solid white; padding-bottom:2px; }
+
+#feed-container {
+  flex:1; overflow-y:scroll; scroll-snap-type:y mandatory;
+  scrollbar-width:none; height:100%;
+}
+#feed-container::-webkit-scrollbar { display:none; }
+
+.feed-post {
+  height:100dvh; width:100%; scroll-snap-align:start;
+  position:relative; background:#111; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.post-media {
+  width:100%; height:100%; object-fit:cover; position:absolute; inset:0;
+}
+.post-media-placeholder {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:120px; position:absolute; inset:0;
+}
+.post-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 40%, transparent 70%, rgba(0,0,0,0.3) 100%);
+}
+.post-info {
+  position:absolute; bottom:calc(var(--nav-h) + 20px); left:16px; right:80px;
+}
+.post-user {
+  display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer;
+}
+.post-avatar {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:700; border:2px solid white; flex-shrink:0;
+}
+.post-username { font-weight:700; font-size:15px; }
+.post-caption { font-size:14px; color:rgba(255,255,255,0.9); line-height:1.5; }
+.post-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.post-tag { font-size:13px; color:var(--accent); font-weight:600; }
+
+/* Product tag on post */
+.post-product-tag {
+  position:absolute; top:50%; left:16px; transform:translateY(-50%);
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.2); border-radius:12px;
+  padding:10px 14px; cursor:pointer; transition:all 0.2s;
+  max-width:160px;
+}
+.post-product-tag:hover { transform:translateY(-50%) scale(1.03); }
+.post-product-tag .ppt-name { font-size:13px; font-weight:700; }
+.post-product-tag .ppt-price { font-size:15px; font-weight:700; color:var(--accent2); margin-top:2px; }
+.post-product-tag .ppt-dot {
+  width:8px; height:8px; border-radius:50%; background:white;
+  position:absolute; right:-4px; top:50%; transform:translateY(-50%);
+  box-shadow:0 0 0 2px rgba(255,255,255,0.4);
+}
+
+/* Post actions */
+.post-actions {
+  position:absolute; right:12px; bottom:calc(var(--nav-h) + 20px);
+  display:flex; flex-direction:column; align-items:center; gap:20px;
+}
+.post-action {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; transition:transform 0.15s;
+}
+.post-action:hover { transform:scale(1.1); }
+.post-action-icon {
+  width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center;
+  font-size:22px;
+}
+.post-action span { font-size:12px; font-weight:600; text-shadow:0 1px 4px rgba(0,0,0,0.5); }
+.post-action.liked .post-action-icon { background:rgba(255,61,90,0.3); }
+
+/* ── SHOP SCREEN ── */
+#screen-shop {
+  background:var(--bg);
+}
+.shop-header {
+  padding:52px 20px 16px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.shop-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.screen-title { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; }
+.search-bar {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface2); border-radius:12px; padding:12px 16px;
+  margin-bottom:16px;
+}
+.search-bar input {
+  flex:1; background:none; border:none; color:var(--text); font-size:15px;
+  font-family:'DM Sans',sans-serif; outline:none;
+}
+.search-bar input::placeholder { color:var(--muted); }
+
+.cats-scroll {
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
+}
+.cats-scroll::-webkit-scrollbar { display:none; }
+.cat-pill {
+  flex-shrink:0; padding:8px 16px; border-radius:100px; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.2s; border:1.5px solid var(--border); color:var(--muted);
+}
+.cat-pill.active { background:var(--accent); border-color:var(--accent); color:white; }
+
+.shop-scroll { flex:1; overflow-y:auto; padding:20px; padding-bottom:calc(var(--nav-h) + 16px); }
+.shop-scroll::-webkit-scrollbar { display:none; }
+
+.shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+.shop-card {
+  background:var(--surface); border-radius:18px; overflow:hidden;
+  border:1px solid var(--border); cursor:pointer; transition:all 0.2s;
+}
+.shop-card:hover { transform:translateY(-3px); border-color:rgba(255,255,255,0.15); }
+.shop-card-img {
+  height:160px; display:flex; align-items:center; justify-content:center;
+  font-size:60px; position:relative;
+}
+.shop-card-img video, .shop-card-img img {
+  width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:18px 18px 0 0;
+}
+.shop-card-badge {
+  position:absolute; top:8px; left:8px;
+  background:var(--accent); color:white; font-size:10px; font-weight:700;
+  padding:3px 8px; border-radius:100px; text-transform:uppercase; letter-spacing:0.5px;
+}
+.shop-card-info { padding:12px; }
+.shop-card-name { font-size:13px; font-weight:600; margin-bottom:4px; line-height:1.3; }
+.shop-card-brand { font-size:11px; color:var(--muted); margin-bottom:8px; }
+.shop-card-footer { display:flex; align-items:center; justify-content:space-between; }
+.shop-card-price { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--accent2); }
+.shop-card-btn {
+  width:30px; height:30px; border-radius:8px; background:var(--accent);
+  display:flex; align-items:center; justify-content:center; border:none; cursor:pointer;
+  font-size:14px; transition:transform 0.15s;
+}
+.shop-card-btn:hover { transform:scale(1.1); }
+
+/* ── PROFILE SCREEN ── */
+#screen-profile { background:var(--bg); overflow-y:auto; }
+#screen-profile::-webkit-scrollbar { display:none; }
+
+.profile-top {
+  padding: 52px 20px 0;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.profile-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+.profile-avatar-wrap { position:relative; }
+.profile-avatar {
+  width:80px; height:80px; border-radius:22px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; font-weight:700; border:3px solid var(--accent);
+  position:relative; overflow:hidden;
+}
+.profile-avatar img { width:100%; height:100%; object-fit:cover; border-radius:19px; }
+.profile-verified {
+  position:absolute; bottom:-4px; right:-4px;
+  background:var(--blue); width:22px; height:22px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px;
+  border:2px solid var(--surface);
+}
+.profile-actions { display:flex; gap:8px; }
+.btn-sm {
+  padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600;
+  cursor:pointer; border:none; transition:all 0.2s;
+}
+.btn-edit { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-share { background:var(--surface2); color:var(--text); border:1px solid var(--border); width:38px; display:flex; align-items:center; justify-content:center; padding:0; border-radius:10px; height:38px; font-size:16px; }
+.profile-name { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:2px; }
+.profile-handle { font-size:14px; color:var(--muted); margin-bottom:10px; }
+.profile-bio { font-size:14px; line-height:1.6; color:rgba(255,255,255,0.8); margin-bottom:16px; }
+
+.profile-stats { display:flex; gap:0; margin-bottom:0; }
+.profile-stat { flex:1; text-align:center; padding:14px 0; border-top:1px solid var(--border); }
+.profile-stat-num { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; }
+.profile-stat-label { font-size:11px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+
+.profile-tabs {
+  display:flex; background:var(--surface); padding:0 20px;
+  border-bottom:1px solid var(--border);
+}
+.profile-tab {
+  flex:1; padding:14px 0; text-align:center; font-size:14px; font-weight:600;
+  cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; transition:all 0.2s;
+}
+.profile-tab.active { color:var(--text); border-bottom-color:var(--accent); }
+
+.profile-content { padding:16px 16px calc(var(--nav-h) + 16px); }
+
+.profile-posts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+.profile-post-thumb {
+  aspect-ratio:1; background:var(--surface); display:flex; align-items:center;
+  justify-content:center; font-size:32px; cursor:pointer; position:relative; overflow:hidden;
+}
+.profile-post-thumb img, .profile-post-thumb video {
+  width:100%; height:100%; object-fit:cover; position:absolute; inset:0;
+}
+.profile-post-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0); display:flex; align-items:center;
+  justify-content:center; transition:background 0.2s;
+}
+.profile-post-thumb:hover .profile-post-overlay { background:rgba(0,0,0,0.4); }
+
+/* Settings within profile */
+.settings-section { margin-bottom:24px; }
+.settings-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:12px; padding:0 4px; }
+.settings-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; background:var(--surface); border-radius:14px; margin-bottom:2px;
+  cursor:pointer; transition:background 0.2s;
+}
+.settings-item:hover { background:var(--surface2); }
+.settings-item-left { display:flex; align-items:center; gap:12px; }
+.settings-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.settings-label { font-size:15px; font-weight:500; }
+.settings-value { font-size:14px; color:var(--muted); }
+.chevron { font-size:16px; color:var(--muted); }
+
+/* Shop section in profile */
+.my-shop-header {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+}
+.shop-stat-row { display:flex; gap:12px; margin-bottom:20px; }
+.shop-stat-mini {
+  flex:1; background:var(--surface); border-radius:14px; padding:14px; text-align:center;
+}
+.shop-stat-mini-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; }
+.shop-stat-mini-label { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* ── UPLOAD MODAL ── */
+.modal-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px);
+  z-index:100; display:none; align-items:flex-end; justify-content:center;
+}
+.modal-overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+.modal-sheet {
+  background:var(--surface); border-radius:24px 24px 0 0; width:100%;
+  padding:24px 20px 40px; max-height:90vh; overflow-y:auto;
+  animation:slideUp 0.3s ease;
+}
+.modal-sheet::-webkit-scrollbar { display:none; }
+
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.modal-handle {
+  width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px;
+}
+.modal-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; margin-bottom:20px; }
+
+.upload-zone {
+  border:2px dashed var(--border); border-radius:16px; padding:32px;
+  text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:16px;
+  position:relative; overflow:hidden;
+}
+.upload-zone:hover { border-color:var(--accent); background:rgba(255,61,90,0.05); }
+.upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.upload-zone-icon { font-size:40px; margin-bottom:10px; }
+.upload-zone-text { font-size:15px; font-weight:600; margin-bottom:4px; }
+.upload-zone-sub { font-size:13px; color:var(--muted); }
+
+.upload-preview {
+  width:100%; aspect-ratio:9/16; background:#000; border-radius:16px; overflow:hidden;
+  display:none; position:relative; margin-bottom:16px;
+}
+.upload-preview.has-media { display:block; }
+.upload-preview img, .upload-preview video { width:100%; height:100%; object-fit:cover; }
+.upload-clear {
+  position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6);
+  border:none; border-radius:50%; width:32px; height:32px; color:white;
+  cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;
+}
+
+.form-row { margin-bottom:14px; }
+.form-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px; }
+.form-inp {
+  width:100%; padding:13px 16px; background:var(--bg); border:1.5px solid var(--border);
+  border-radius:12px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; outline:none;
+  transition:border-color 0.2s;
+}
+.form-inp:focus { border-color:var(--accent); }
+.form-inp::placeholder { color:var(--muted); }
+
+/* Product detail modal */
+.product-detail { padding:20px 20px 40px; }
+.product-detail-img {
+  height:300px; border-radius:20px; display:flex; align-items:center; justify-content:center;
+  font-size:100px; margin-bottom:20px; position:relative; overflow:hidden; background:var(--surface);
+}
+.product-detail-img img, .product-detail-img video {
+  width:100%; height:100%; object-fit:cover; border-radius:20px;
+}
+.product-detail-brand { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.product-detail-name { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; margin-bottom:8px; }
+.product-detail-price { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--accent2); margin-bottom:16px; }
+.product-detail-desc { font-size:14px; color:rgba(255,255,255,0.7); line-height:1.7; margin-bottom:24px; }
+
+.sizes-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+.size-btn {
+  padding:10px 18px; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:10px; color:var(--text); font-size:14px; font-weight:600; cursor:pointer;
+  transition:all 0.2s;
+}
+.size-btn.selected { background:var(--accent); border-color:var(--accent); }
+
+.buy-btn {
+  width:100%; padding:18px; background:var(--accent); color:white; border:none;
+  border-radius:16px; font-family:'Syne',sans-serif; font-size:17px; font-weight:700;
+  cursor:pointer; transition:all 0.2s; letter-spacing:0.5px;
+}
+.buy-btn:hover { background:#ff5570; transform:translateY(-1px); box-shadow:0 8px 30px rgba(255,61,90,0.3); }
+
+/* ── TOAST ── */
+.toast {
+  position:absolute; top:80px; left:50%; transform:translateX(-50%) translateY(-20px);
+  background:rgba(255,255,255,0.1); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.15); border-radius:100px;
+  padding:10px 20px; font-size:14px; font-weight:600;
+  z-index:200; opacity:0; transition:all 0.3s; white-space:nowrap;
+  pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Like animation */
+.heart-anim {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:20; font-size:100px;
+  opacity:0; transform:scale(0.5);
+  transition:all 0.3s;
+}
+.heart-anim.show { opacity:1; transform:scale(1); }
+.heart-anim.hide { opacity:0; transform:scale(1.5); }
+
+/* Toggle switch */
+.toggle {
+  width:46px; height:26px; background:var(--surface2); border-radius:100px;
+  position:relative; cursor:pointer; transition:background 0.2s; flex-shrink:0;
+}
+.toggle.on { background:var(--accent); }
+.toggle::after {
+  content:''; position:absolute; width:20px; height:20px; border-radius:50%;
+  background:white; top:3px; left:3px; transition:left 0.2s;
+}
+.toggle.on::after { left:23px; }
+
+/* Edit profile form */
+.edit-avatar-wrap {
+  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;
+  padding:20px 0;
+}
+.edit-avatar-big {
+  width:90px; height:90px; border-radius:24px; display:flex; align-items:center; justify-content:center;
+  font-size:40px; border:3px solid var(--accent); overflow:hidden; position:relative; cursor:pointer;
+}
+.edit-avatar-big img { width:100%; height:100%; object-fit:cover; }
+.edit-avatar-label { font-size:14px; color:var(--accent); font-weight:600; cursor:pointer; }
+.edit-avatar-big input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+/* Notification dot */
+.notif-dot {
+  width:8px; height:8px; border-radius:50%; background:var(--accent);
+  position:absolute; top:2px; right:2px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-glow"></div>
+  <div class="auth-form">
+    <div class="auth-logo">DRIP</div>
+    <div class="auth-sub">Fashion. Verkaufen. Entdecken.</div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Anmelden</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Registrieren</div>
+    </div>
+
+    <div id="auth-login" class="auth-form-panel active">
+      <input class="inp" id="login-email" placeholder="E-Mail" type="email">
+      <input class="inp" id="login-pass" placeholder="Passwort" type="password">
+      <button class="btn-main" onclick="doLogin()" style="margin-top:8px">Einloggen →</button>
+      <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">Demo: einfach klicken ✌️</div>
+    </div>
+
+    <div id="auth-register" class="auth-form-panel">
+      <input class="inp" id="reg-name" placeholder="Dein Name">
+      <input class="inp" id="reg-user" placeholder="@Benutzername">
+      <input class="inp" id="reg-email2" placeholder="E-Mail" type="email">
+      <input class="inp" id="reg-pass2" placeholder="Passwort" type="password">
+      <button class="btn-main" onclick="doRegister()" style="margin-top:8px">Account erstellen →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     FEED SCREEN
+════════════════════════════════════ -->
+<div id="screen-feed" class="screen">
+  <div class="feed-header">
+    <div class="feed-logo">DRIP</div>
+    <div class="feed-tabs">
+      <div class="feed-tab active">Für Dich</div>
+      <div class="feed-tab" onclick="showToast('Folge-Feed kommt bald!')">Folge ich</div>
+    </div>
+    <div style="font-size:20px;cursor:pointer" onclick="showToast('Suche öffnen')">🔍</div>
+  </div>
+  <div id="feed-container"></div>
+  <div class="heart-anim" id="heart-anim">❤️</div>
+</div>
+
+<!-- ════════════════════════════════════
+     SHOP SCREEN
+════════════════════════════════════ -->
+<div id="screen-shop" class="screen">
+  <div class="shop-header">
+    <div class="shop-header-top">
+      <div class="screen-title">Shop</div>
+      <div style="font-size:20px;cursor:pointer;position:relative" onclick="showToast('Warenkorb kommt bald! 🛒')">🛒<div class="notif-dot"></div></div>
+    </div>
+    <div class="search-bar">
+      <span>🔍</span>
+      <input placeholder="Klamotten suchen..." id="shop-search" oninput="filterShop()">
+    </div>
+    <div class="cats-scroll" id="shop-cats"></div>
+  </div>
+  <div class="shop-scroll">
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PROFILE SCREEN
+════════════════════════════════════ -->
+<div id="screen-profile" class="screen">
+  <div class="profile-top">
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profile-avatar-el">🧢</div>
+        <div class="profile-verified">✓</div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-sm btn-edit" onclick="openModal('modal-edit-profile')">Bearbeiten</button>
+        <button class="btn-share" onclick="showToast('Link kopiert! 🔗')">↑</button>
+      </div>
+    </div>
+    <div class="profile-name" id="profile-name-el">@username</div>
+    <div class="profile-handle" id="profile-handle-el">Kein Bio</div>
+    <div class="profile-bio" id="profile-bio-el"></div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="profile-stat-num" id="stat-posts">0</div><div class="profile-stat-label">Posts</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">0</div><div class="profile-stat-label">Follower</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">0</div><div class="profile-stat-label">Folge ich</div></div>
+      <div class="profile-stat"><div class="profile-stat-num" id="stat-sales">0€</div><div class="profile-stat-label">Umsatz</div></div>
+    </div>
+  </div>
+
+  <div class="profile-tabs">
+    <div class="profile-tab active" onclick="switchProfileTab('posts', this)">Posts</div>
+    <div class="profile-tab" onclick="switchProfileTab('shop', this)">Mein Shop</div>
+    <div class="profile-tab" onclick="switchProfileTab('settings', this)">Einstellungen</div>
+  </div>
+
+  <div class="profile-content">
+
+    <!-- Posts grid -->
+    <div id="ptab-posts">
+      <div class="profile-posts-grid" id="profile-posts-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)">
+          <div style="font-size:40px;margin-bottom:12px">📸</div>
+          <div>Noch keine Posts — teile deine erste Outfit!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Shop -->
+    <div id="ptab-shop" style="display:none">
+      <div class="my-shop-header">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700">Mein Store</div>
+        <button class="btn-sm btn-edit" onclick="openModal('modal-add-product')">+ Produkt</button>
+      </div>
+      <div class="shop-stat-row">
+        <div class="shop-stat-mini"><div class="shop-stat-mini-num" id="shop-stat-products">0</div><div class="shop-stat-mini-label">Produkte</div></div>
+        <div class="shop-stat-mini"><div class="shop-stat-mini-num">0</div><div class="shop-stat-mini-label">Bestellungen</div></div>
+        <div class="shop-stat-mini"><div class="shop-stat-mini-num">0€</div><div class="shop-stat-mini-label">Umsatz</div></div>
+      </div>
+      <div class="shop-grid" id="my-shop-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:40px;margin-bottom:12px">👕</div>
+          <div>Noch keine Produkte</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="ptab-settings" style="display:none">
+      <div class="settings-section">
+        <div class="settings-title">Konto</div>
+        <div class="settings-item" onclick="openModal('modal-edit-profile')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a1a2e">👤</div><div class="settings-label">Profil bearbeiten</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="showToast('Passwort ändern')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a1a1a">🔒</div><div class="settings-label">Passwort</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="showToast('Benachrichtigungen')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a1a0a">🔔</div><div class="settings-label">Benachrichtigungen</div></div>
+          <div id="toggle-notif" class="toggle on" onclick="event.stopPropagation();toggleSetting(this)"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Shop</div>
+        <div class="settings-item" onclick="openModal('modal-add-product')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a0a0a">🏪</div><div class="settings-label">Produkt hinzufügen</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="showToast('Bestellungen anzeigen')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#0a1a0a">📦</div><div class="settings-label">Bestellungen</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="showToast('Zahlungseinstellungen')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#0a0a1a">💳</div><div class="settings-label">Zahlung</div></div>
+          <div class="chevron">›</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">App</div>
+        <div class="settings-item" onclick="showToast('Datenschutz')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a1a1a">🛡️</div><div class="settings-label">Datenschutz</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="showToast('Hilfe & Support')">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a1a1a">❓</div><div class="settings-label">Hilfe</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="settings-item" onclick="doLogout()" style="margin-top:8px">
+          <div class="settings-item-left"><div class="settings-icon" style="background:#1a0a0a">🚪</div><div class="settings-label" style="color:#ff4444">Abmelden</div></div>
+          <div class="chevron" style="color:#ff4444">›</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     BOTTOM NAV
+════════════════════════════════════ -->
+<div id="bottom-nav">
+  <div class="nav-item active" onclick="switchScreen('feed', this)" id="nav-feed">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" onclick="switchScreen('shop', this)" id="nav-shop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.99-1.61L23 6H6"/></svg>
+    <span>Shop</span>
+  </div>
+  <div class="nav-post" onclick="openModal('modal-upload')">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </div>
+  <div class="nav-item" onclick="switchScreen('profile', this)" id="nav-profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     UPLOAD MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-upload">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Post erstellen ✨</div>
+
+    <div class="upload-zone" id="upload-zone-post">
+      <input type="file" accept="image/*,video/*" id="upload-file-post" onchange="handleUpload(this,'post')">
+      <div class="upload-zone-icon">📸</div>
+      <div class="upload-zone-text">Foto oder Video hochladen</div>
+      <div class="upload-zone-sub">JPG, PNG, MP4 · Max 50MB</div>
+    </div>
+
+    <div class="upload-preview" id="upload-preview-post">
+      <button class="upload-clear" onclick="clearUpload('post')">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">Caption</div>
+      <input class="form-inp" id="post-caption" placeholder="Beschreibe dein Outfit...">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Tags</div>
+      <input class="form-inp" id="post-tags" placeholder="#streetwear #vintage #ootd">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Produkt verlinken (optional)</div>
+      <select class="form-inp" id="post-product">
+        <option value="">Kein Produkt</option>
+      </select>
+    </div>
+    <button class="btn-main" onclick="submitPost()" style="margin-top:8px">Posten 🚀</button>
+    <button onclick="closeModal('modal-upload')" style="width:100%;padding:14px;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;margin-top:8px">Abbrechen</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADD PRODUCT MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Produkt hinzufügen 👕</div>
+
+    <div class="upload-zone" id="upload-zone-prod">
+      <input type="file" accept="image/*,video/*" id="upload-file-prod" onchange="handleUpload(this,'prod')">
+      <div class="upload-zone-icon">🖼️</div>
+      <div class="upload-zone-text">Produktbild oder Video</div>
+      <div class="upload-zone-sub">Zeig dein Produkt von der besten Seite</div>
+    </div>
+    <div class="upload-preview" id="upload-preview-prod">
+      <button class="upload-clear" onclick="clearUpload('prod')">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">Produktname</div>
+      <input class="form-inp" id="prod-name" placeholder="z.B. Vintage Cargo Pants">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Kategorie</div>
+      <select class="form-inp" id="prod-cat">
+        <option value="">Wählen...</option>
+        <option>T-Shirts & Tops</option><option>Hoodies</option><option>Jacken</option>
+        <option>Hosen & Jeans</option><option>Shorts</option><option>Kleider</option>
+        <option>Schuhe</option><option>Caps & Hüte</option><option>Taschen</option><option>Accessoires</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-row">
+        <div class="form-label">Preis (€)</div>
+        <input class="form-inp" id="prod-price" type="number" placeholder="49.99">
+      </div>
+      <div class="form-row">
+        <div class="form-label">Bestand</div>
+        <input class="form-inp" id="prod-stock" type="number" placeholder="10">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">Beschreibung</div>
+      <input class="form-inp" id="prod-desc" placeholder="Beschreibe das Produkt...">
+    </div>
+    <button class="btn-main" onclick="addProduct()" style="margin-top:8px">Produkt hochladen ✓</button>
+    <button onclick="closeModal('modal-add-product')" style="width:100%;padding:14px;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;margin-top:8px">Abbrechen</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PRODUCT DETAIL MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-product-detail">
+  <div class="modal-sheet" style="padding:0;border-radius:24px 24px 0 0">
+    <div style="padding:12px 20px 0;display:flex;justify-content:flex-end">
+      <button onclick="closeModal('modal-product-detail')" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:8px">✕</button>
+    </div>
+    <div class="product-detail">
+      <div class="product-detail-img" id="detail-img-wrap">🧥</div>
+      <div class="product-detail-brand" id="detail-brand">Brand</div>
+      <div class="product-detail-name" id="detail-name">Produktname</div>
+      <div class="product-detail-price" id="detail-price">0€</div>
+      <div class="product-detail-desc" id="detail-desc">Beschreibung</div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px">Größe</div>
+      <div class="sizes-row">
+        <button class="size-btn" onclick="selectSize(this)">XS</button>
+        <button class="size-btn selected" onclick="selectSize(this)">S</button>
+        <button class="size-btn" onclick="selectSize(this)">M</button>
+        <button class="size-btn" onclick="selectSize(this)">L</button>
+        <button class="size-btn" onclick="selectSize(this)">XL</button>
+      </div>
+      <button class="buy-btn" onclick="showToast('🛒 In den Warenkorb gelegt!')">In den Warenkorb</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Profil bearbeiten</div>
+    <div class="edit-avatar-wrap">
+      <div class="edit-avatar-big" id="edit-avatar-preview">
+        <input type="file" accept="image/*" id="avatar-file" onchange="handleAvatarUpload(this)">
+        🧢
+      </div>
+      <div class="edit-avatar-label" onclick="document.getElementById('avatar-file').click()">Foto ändern</div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">Name</div>
+      <input class="form-inp" id="edit-name" placeholder="Dein Name">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Benutzername</div>
+      <input class="form-inp" id="edit-username" placeholder="@username">
+    </div>
+    <div class="form-row">
+      <div class="form-label">Bio</div>
+      <input class="form-inp" id="edit-bio" placeholder="Beschreibe dich in einem Satz">
+    </div>
+    <button class="btn-main" onclick="saveProfile()" style="margin-top:8px">Speichern ✓</button>
+    <button onclick="closeModal('modal-edit-profile')" style="width:100%;padding:14px;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;margin-top:8px">Abbrechen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════
+// STATE
+// ══════════════════════════════
+const S = {
+  user: null,
+  posts: [],
+  products: [],
+  uploadedMediaPost: null,   // {type, src}
+  uploadedMediaProd: null,
+  avatarSrc: null,
+};
+
+// Demo posts
+const DEMO_POSTS = [
+  { id:'d1', user:'@urbanvibes', avatar:'🧢', avatarColor:'#2563eb', emoji:'🧥', bg:'#1a1a2e', caption:'Neuer Drop 🔥 Dieser Jacket geht weg!', tags:['#streetwear','#newdrop'], product:{name:'Cargo Jacket',price:'89€'}, likes:1240, comments:88 },
+  { id:'d2', user:'@hypefit', avatar:'👟', avatarColor:'#c4541a', emoji:'👟', bg:'#2e1a0a', caption:'Frische Kicks für den Sommer 🌊', tags:['#sneakers','#fresh'], product:{name:'Retro Sneaker',price:'129€'}, likes:3400, comments:210 },
+  { id:'d3', user:'@retroclub', avatar:'🕶️', avatarColor:'#5a5e3a', emoji:'🕶️', bg:'#1a1e0a', caption:'Vintage look aber make it fashion ✨', tags:['#vintage','#ootd'], product:null, likes:890, comments:44 },
+  { id:'d4', user:'@softdrip', avatar:'🌸', avatarColor:'#db2777', emoji:'👗', bg:'#2e0a1a', caption:'Das Kleid ist soo weich und cute 🌸', tags:['#aesthetic','#softgirl'], product:{name:'Floral Dress',price:'59€'}, likes:5100, comments:330 },
+];
+
+// ══════════════════════════════
+// AUTH
+// ══════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('auth-login').classList.toggle('active', tab==='login');
+  document.getElementById('auth-register').classList.toggle('active', tab==='register');
+}
+
+function doLogin() {
+  S.user = { name:'Demo User', username:'@demouser', bio:'Fashion lover 🔥', avatarEmoji:'🧢', avatarColor:'#c4541a', avatarSrc:null };
+  enterApp();
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim() || 'Neuer User';
+  const username = document.getElementById('reg-user').value.trim() || '@newuser';
+  S.user = { name, username: username.startsWith('@')?username:'@'+username, bio:'Fashion lover 🔥', avatarEmoji:'🧢', avatarColor:'#c4541a', avatarSrc:null };
+  enterApp();
+}
+
+function enterApp() {
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('screen-feed').classList.add('active');
+  document.getElementById('bottom-nav').classList.add('visible');
+  initFeed();
+  initShop();
+  updateProfile();
+  showToast('Willkommen! 👋');
+}
+
+function doLogout() {
+  ['screen-feed','screen-shop','screen-profile'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('screen-auth').classList.add('active');
+  document.getElementById('bottom-nav').classList.remove('visible');
+  S.user = null; S.posts = []; S.products = [];
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-feed').classList.add('active');
+  showToast('Abgemeldet 👋');
+}
+
+// ══════════════════════════════
+// NAVIGATION
+// ══════════════════════════════
+function switchScreen(name, el) {
+  ['feed','shop','profile'].forEach(n => {
+    document.getElementById('screen-'+n).classList.toggle('active', n===name);
+  });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('auth-login').classList.toggle('active', tab==='login');
+  document.getElementById('auth-register').classList.toggle('active', tab==='register');
+}
+
+function switchProfileTab(tab, el) {
+  ['posts','shop','settings'].forEach(t => document.getElementById('ptab-'+t).style.display = t===tab?'block':'none');
+  document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// ══════════════════════════════
+// FEED
+// ══════════════════════════════
+function initFeed() {
+  const container = document.getElementById('feed-container');
+  container.innerHTML = '';
+  const allPosts = [...DEMO_POSTS, ...S.posts.map(p => ({...p, isOwn:true}))];
+  allPosts.forEach(post => container.appendChild(createFeedPost(post)));
+  container.addEventListener('dblclick', handleDoubleTap);
+}
+
+function createFeedPost(post) {
+  const el = document.createElement('div');
+  el.className = 'feed-post';
+  el.dataset.id = post.id;
+
+  let mediaHtml = '';
+  if (post.mediaSrc) {
+    if (post.mediaType === 'video') {
+      mediaHtml = `<video class="post-media" src="${post.mediaSrc}" autoplay muted loop playsinline></video>`;
+    } else {
+      mediaHtml = `<img class="post-media" src="${post.mediaSrc}" alt="">`;
+    }
+  } else {
+    mediaHtml = `<div class="post-media-placeholder" style="background:${post.bg||'#111'}">${post.emoji||'👕'}</div>`;
+  }
+
+  const productTag = post.product ? `
+    <div class="post-product-tag" onclick="openProductFromFeed(event,'${post.product.name}','${post.product.price}')">
+      <div class="ppt-name">${post.product.name}</div>
+      <div class="ppt-price">${post.product.price}</div>
+      <div class="ppt-dot"></div>
+    </div>` : '';
+
+  const tags = (post.tags||[]).map(t => `<span class="post-tag">${t}</span>`).join('');
+  const likes = post.likes || 0;
+  const comments = post.comments || 0;
+
+  el.innerHTML = `
+    ${mediaHtml}
+    <div class="post-overlay"></div>
+    ${productTag}
+    <div class="post-info">
+      <div class="post-user">
+        <div class="post-avatar" style="background:${post.avatarColor||'#333'}">${post.avatarSrc?`<img src="${post.avatarSrc}">`:(post.avatar||'👤')}</div>
+        <div class="post-username">${post.user||'@user'}</div>
+        ${!post.isOwn ? `<div style="margin-left:4px;font-size:12px;background:var(--accent);color:white;padding:2px 10px;border-radius:100px;font-weight:700;cursor:pointer" onclick="showToast('Folge ich!')">Folgen</div>` : ''}
+      </div>
+      <div class="post-caption">${post.caption||''}</div>
+      <div class="post-tags">${tags}</div>
+    </div>
+    <div class="post-actions">
+      <div class="post-action" id="like-${post.id}" onclick="toggleLike(this,'${post.id}')">
+        <div class="post-action-icon">🤍</div>
+        <span>${formatNum(likes)}</span>
+      </div>
+      <div class="post-action" onclick="showToast('Kommentare kommen bald!')">
+        <div class="post-action-icon">💬</div>
+        <span>${formatNum(comments)}</span>
+      </div>
+      <div class="post-action" onclick="showToast('Geteilt! 🔗')">
+        <div class="post-action-icon">↗️</div>
+        <span>Teilen</span>
+      </div>
+      ${post.product ? `<div class="post-action" onclick="openProductFromFeed(event,'${post.product.name}','${post.product.price}')">
+        <div class="post-action-icon">🛒</div>
+        <span>Kaufen</span>
+      </div>` : ''}
+    </div>
+  `;
+  return el;
+}
+
+function formatNum(n) {
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return n;
+}
+
+function toggleLike(el, id) {
+  const icon = el.querySelector('.post-action-icon');
+  const isLiked = icon.textContent === '❤️';
+  icon.textContent = isLiked ? '🤍' : '❤️';
+  el.classList.toggle('liked', !isLiked);
+  if (!isLiked) showHeartAnim();
+}
+
+function handleDoubleTap(e) {
+  if (e.target.closest('.post-action,.post-product-tag')) return;
+  showHeartAnim();
+}
+
+function showHeartAnim() {
+  const h = document.getElementById('heart-anim');
+  h.className = 'heart-anim show';
+  setTimeout(() => h.classList.add('hide'), 400);
+  setTimeout(() => h.className = 'heart-anim', 700);
+}
+
+function openProductFromFeed(e, name, price) {
+  e.stopPropagation();
+  document.getElementById('detail-img-wrap').textContent = '🧥';
+  document.getElementById('detail-brand').textContent = 'DRIP Store';
+  document.getElementById('detail-name').textContent = name;
+  document.getElementById('detail-price').textContent = price;
+  document.getElementById('detail-desc').textContent = 'Premium Qualität. Direkt vom Creator. Schnelle Lieferung in 2-4 Werktagen.';
+  openModal('modal-product-detail');
+}
+
+// ══════════════════════════════
+// SHOP
+// ══════════════════════════════
+const SHOP_CATS = ['Alle','T-Shirts','Hoodies','Jacken','Hosen','Schuhe','Caps','Accessoires'];
+const DEMO_PRODUCTS = [
+  {id:'dp1', name:'Oversized Tee', brand:'UrbanDrop', cat:'T-Shirts', price:34.99, emoji:'👕', bg:'#1a1a2e', badge:'NEU'},
+  {id:'dp2', name:'Vintage Hoodie', brand:'RetroClub', cat:'Hoodies', price:79.99, emoji:'🧥', bg:'#2e1a0a', badge:''},
+  {id:'dp3', name:'Cargo Pants', brand:'StreetWave', cat:'Hosen', price:69.99, emoji:'👖', bg:'#1a2e1a', badge:'SALE'},
+  {id:'dp4', name:'Retro Sneaker', brand:'HypeFit', cat:'Schuhe', price:129.99, emoji:'👟', bg:'#2e0a0a', badge:''},
+  {id:'dp5', name:'Bucket Hat', brand:'SoftDrip', cat:'Caps', price:29.99, emoji:'🧢', bg:'#0a1a2e', badge:''},
+  {id:'dp6', name:'Cargo Jacket', brand:'UrbanDrop', cat:'Jacken', price:99.99, emoji:'🧥', bg:'#2e2e0a', badge:'NEU'},
+];
+
+let currentCat = 'Alle';
+
+function initShop() {
+  const catsEl = document.getElementById('shop-cats');
+  catsEl.innerHTML = '';
+  SHOP_CATS.forEach(cat => {
+    const el = document.createElement('div');
+    el.className = 'cat-pill' + (cat === 'Alle' ? ' active' : '');
+    el.textContent = cat;
+    el.onclick = () => { currentCat = cat; document.querySelectorAll('.cat-pill').forEach(c => c.classList.remove('active')); el.classList.add('active'); renderShop(); };
+    catsEl.appendChild(el);
+  });
+  renderShop();
+}
+
+function filterShop() { renderShop(); }
+
+function renderShop() {
+  const q = document.getElementById('shop-search').value.toLowerCase();
+  const all = [...DEMO_PRODUCTS, ...S.products];
+  const filtered = all.filter(p => {
+    const catMatch = currentCat === 'Alle' || p.cat.includes(currentCat);
+    const qMatch = !q || p.name.toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q);
+    return catMatch && qMatch;
+  });
+  const grid = document.getElementById('shop-grid');
+  if (!filtered.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">🔍</div><div>Keine Produkte gefunden</div></div>`; return; }
+  grid.innerHTML = filtered.map(p => `
+    <div class="shop-card" onclick="openProductDetail('${p.id}')">
+      <div class="shop-card-img" style="background:${p.bg||'#1a1a1a'}">
+        ${p.mediaSrc ? (p.mediaType==='video' ? `<video src="${p.mediaSrc}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:18px 18px 0 0"></video>` : `<img src="${p.mediaSrc}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:18px 18px 0 0" alt="">`) : `<span>${p.emoji||'👕'}</span>`}
+        ${p.badge ? `<div class="shop-card-badge">${p.badge}</div>` : ''}
+      </div>
+      <div class="shop-card-info">
+        <div class="shop-card-name">${p.name}</div>
+        <div class="shop-card-brand">${p.brand||S.user?.username||'Mein Store'}</div>
+        <div class="shop-card-footer">
+          <div class="shop-card-price">${Number(p.price).toFixed(2)}€</div>
+          <button class="shop-card-btn" onclick="event.stopPropagation();showToast('🛒 In den Warenkorb!')">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+const ALL_PRODUCTS_MAP = {};
+[...DEMO_PRODUCTS].forEach(p => ALL_PRODUCTS_MAP[p.id] = p);
+
+function openProductDetail(id) {
+  const p = ALL_PRODUCTS_MAP[id] || S.products.find(p => p.id === id);
+  if (!p) return;
+  const wrap = document.getElementById('detail-img-wrap');
+  if (p.mediaSrc) {
+    wrap.innerHTML = p.mediaType==='video' ? `<video src="${p.mediaSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;border-radius:20px"></video>` : `<img src="${p.mediaSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:20px">`;
+  } else {
+    wrap.textContent = p.emoji || '👕';
+    wrap.style.background = p.bg || '#1a1a1a';
+  }
+  document.getElementById('detail-brand').textContent = p.brand || S.user?.username || 'Store';
+  document.getElementById('detail-name').textContent = p.name;
+  document.getElementById('detail-price').textContent = Number(p.price).toFixed(2) + '€';
+  document.getElementById('detail-desc').textContent = p.desc || 'Premium Qualität. Schnelle Lieferung in 2-4 Werktagen.';
+  openModal('modal-product-detail');
+}
+
+// ══════════════════════════════
+// PROFILE
+// ══════════════════════════════
+function updateProfile() {
+  if (!S.user) return;
+  const u = S.user;
+  const av = document.getElementById('profile-avatar-el');
+  if (u.avatarSrc) {
+    av.innerHTML = `<img src="${u.avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:19px">`;
+  } else {
+    av.textContent = u.avatarEmoji || '🧢';
+    av.style.background = u.avatarColor || '#333';
+  }
+  document.getElementById('profile-name-el').textContent = u.name || 'User';
+  document.getElementById('profile-handle-el').textContent = u.username || '@user';
+  document.getElementById('profile-bio-el').textContent = u.bio || '';
+  document.getElementById('stat-posts').textContent = S.posts.length;
+}
+
+function saveProfile() {
+  if (!S.user) return;
+  const name = document.getElementById('edit-name').value.trim() || S.user.name;
+  const username = document.getElementById('edit-username').value.trim() || S.user.username;
+  const bio = document.getElementById('edit-bio').value.trim() || S.user.bio;
+  if (S.avatarSrc) S.user.avatarSrc = S.avatarSrc;
+  S.user.name = name;
+  S.user.username = username.startsWith('@') ? username : '@'+username;
+  S.user.bio = bio;
+  updateProfile();
+  closeModal('modal-edit-profile');
+  showToast('Profil gespeichert ✓');
+}
+
+function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    S.avatarSrc = e.target.result;
+    document.getElementById('edit-avatar-preview').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:21px"><input type="file" accept="image/*" id="avatar-file" onchange="handleAvatarUpload(this)">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══════════════════════════════
+// UPLOAD MEDIA
+// ══════════════════════════════
+function handleUpload(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const src = e.target.result;
+    const isVideo = file.type.startsWith('video/');
+    const previewEl = document.getElementById('upload-preview-' + type);
+    const zoneEl = document.getElementById('upload-zone-' + type);
+    previewEl.innerHTML = `<button class="upload-clear" onclick="clearUpload('${type}')">✕</button>` +
+      (isVideo ? `<video src="${src}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover"></video>` : `<img src="${src}" style="width:100%;height:100%;object-fit:cover">`);
+    previewEl.classList.add('has-media');
+    zoneEl.style.display = 'none';
+    if (type === 'post') S.uploadedMediaPost = { src, type: isVideo ? 'video' : 'image' };
+    else S.uploadedMediaProd = { src, type: isVideo ? 'video' : 'image' };
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearUpload(type) {
+  document.getElementById('upload-preview-' + type).classList.remove('has-media');
+  document.getElementById('upload-zone-' + type).style.display = '';
+  if (type === 'post') S.uploadedMediaPost = null;
+  else S.uploadedMediaProd = null;
+  document.getElementById('upload-file-' + type).value = '';
+}
+
+// ══════════════════════════════
+// POST / PRODUCT
+// ══════════════════════════════
+function submitPost() {
+  const caption = document.getElementById('post-caption').value.trim();
+  const tags = document.getElementById('post-tags').value.split(' ').filter(t => t.trim());
+  const productIdx = document.getElementById('post-product').value;
+  const linkedProduct = productIdx ? S.products[parseInt(productIdx)] : null;
+  const u = S.user;
+  const post = {
+    id: 'p' + Date.now(),
+    user: u.username,
+    avatar: u.avatarEmoji,
+    avatarColor: u.avatarColor,
+    avatarSrc: u.avatarSrc,
+    caption,
+    tags,
+    product: linkedProduct ? { name: linkedProduct.name, price: Number(linkedProduct.price).toFixed(2) + '€' } : null,
+    likes: 0, comments: 0, isOwn: true,
+    emoji: '📸', bg: '#1a1a1a',
+    mediaSrc: S.uploadedMediaPost?.src,
+    mediaType: S.uploadedMediaPost?.type,
+  };
+  S.posts.unshift(post);
+  clearUpload('post');
+  document.getElementById('post-caption').value = '';
+  document.getElementById('post-tags').value = '';
+  closeModal('modal-upload');
+  initFeed();
+  updateProfile();
+  showToast('Post veröffentlicht! 🚀');
+  renderProfilePosts();
+}
+
+function addProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const cat = document.getElementById('prod-cat').value;
+  const price = document.getElementById('prod-price').value;
+  const stock = document.getElementById('prod-stock').value;
+  const desc = document.getElementById('prod-desc').value.trim();
+  if (!name || !cat || !price) { showToast('Bitte Name, Kategorie & Preis ⚠️'); return; }
+  const prod = {
+    id: 'up' + Date.now(),
+    name, cat, price: parseFloat(price), stock: parseInt(stock)||0, desc,
+    brand: S.user?.username || 'Mein Store',
+    emoji: '👕', bg: '#1a1a2e',
+    mediaSrc: S.uploadedMediaProd?.src,
+    mediaType: S.uploadedMediaProd?.type,
+    badge: 'NEU',
+  };
+  S.products.push(prod);
+  ALL_PRODUCTS_MAP[prod.id] = prod;
+  clearUpload('prod');
+  ['prod-name','prod-price','prod-stock','prod-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('prod-cat').value = '';
+  S.uploadedMediaProd = null;
+  closeModal('modal-add-product');
+  renderShop();
+  renderMyShop();
+  updateProductSelect();
+  document.getElementById('shop-stat-products').textContent = S.products.length;
+  showToast('Produkt hinzugefügt ✓');
+}
+
+function renderMyShop() {
+  const grid = document.getElementById('my-shop-grid');
+  if (!S.products.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">👕</div><div>Noch keine Produkte</div></div>`;
+    return;
+  }
+  grid.innerHTML = S.products.map(p => `
+    <div class="shop-card" onclick="openProductDetail('${p.id}')">
+      <div class="shop-card-img" style="background:${p.bg||'#1a1a1a'}">
+        ${p.mediaSrc ? (p.mediaType==='video' ? `<video src="${p.mediaSrc}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:18px 18px 0 0"></video>` : `<img src="${p.mediaSrc}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:18px 18px 0 0" alt="">`) : `<span>${p.emoji}</span>`}
+        <div class="shop-card-badge">NEU</div>
+      </div>
+      <div class="shop-card-info">
+        <div class="shop-card-name">${p.name}</div>
+        <div class="shop-card-brand">${p.cat}</div>
+        <div class="shop-card-footer">
+          <div class="shop-card-price">${Number(p.price).toFixed(2)}€</div>
+          <button class="shop-card-btn" style="background:#333" onclick="event.stopPropagation();removeProduct('${p.id}')">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeProduct(id) {
+  S.products = S.products.filter(p => p.id !== id);
+  delete ALL_PRODUCTS_MAP[id];
+  renderMyShop(); renderShop();
+  document.getElementById('shop-stat-products').textContent = S.products.length;
+  showToast('Produkt entfernt');
+}
+
+function renderProfilePosts() {
+  const grid = document.getElementById('profile-posts-grid');
+  if (!S.posts.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">📸</div><div>Noch keine Posts</div></div>`;
+    return;
+  }
+  grid.innerHTML = S.posts.map(p => `
+    <div class="profile-post-thumb" style="background:${p.bg||'#1a1a1a'}">
+      ${p.mediaSrc ? (p.mediaType==='video' ? `<video src="${p.mediaSrc}" muted loop style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>` : `<img src="${p.mediaSrc}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" alt="">`) : `<span style="position:relative;z-index:1">${p.emoji||'📸'}</span>`}
+      <div class="profile-post-overlay"></div>
+    </div>
+  `).join('');
+}
+
+function updateProductSelect() {
+  const sel = document.getElementById('post-product');
+  sel.innerHTML = '<option value="">Kein Produkt</option>' +
+    S.products.map((p,i) => `<option value="${i}">${p.name} — ${Number(p.price).toFixed(2)}€</option>`).join('');
+}
+
+// ══════════════════════════════
+// MODALS
+// ══════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// ══════════════════════════════
+// UTILS
+// ══════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function toggleSetting(el) { el.classList.toggle('on'); }
+
+function selectSize(btn) {
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// Edit profile prefill
+document.getElementById('modal-edit-profile').addEventListener('transitionend', () => {});
+document.querySelector('[onclick="openModal(\'modal-edit-profile\')"]')?.addEventListener && null;
+
+function prefillEditProfile() {
+  if (!S.user) return;
+  document.getElementById('edit-name').value = S.user.name || '';
+  document.getElementById('edit-username').value = S.user.username || '';
+  document.getElementById('edit-bio').value = S.user.bio || '';
+  const prev = document.getElementById('edit-avatar-preview');
+  if (S.user.avatarSrc) {
+    prev.innerHTML = `<img src="${S.user.avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:21px"><input type="file" accept="image/*" id="avatar-file" onchange="handleAvatarUpload(this)">`;
+  } else {
+    prev.style.background = S.user.avatarColor || '#333';
+    prev.innerHTML = `${S.user.avatarEmoji||'🧢'}<input type="file" accept="image/*" id="avatar-file" onchange="handleAvatarUpload(this)">`;
+  }
+}
+
+const origOpenModal = openModal;
+window.openModal = (id) => { origOpenModal(id); if (id === 'modal-edit-profile') prefillEditProfile(); };
+</script>
+</body>
+</html>
